@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light" data-lang="ar">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SahabaX AI — توقع الطقس</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<style>
+:root{
+  --bg:#edf4fb;
+  --surface:#ffffff;
+  --surface2:#f7fbff;
+  --border:#dce6f0;
+  --text:#16202c;
+  --text-muted:#708195;
+  --accent:#4f8cff;
+  --accent2:#00b8d9;
+  --accent-soft:#eaf3ff;
+  --success:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --shadow:0 10px 35px rgba(79,140,255,.10);
+  --radius:18px;
+  --radius-sm:12px;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans Arabic',sans-serif;
+  --transition:.25s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"]{
+  --bg:#0b1320;
+  --surface:#131d2a;
+  --surface2:#1a2738;
+  --border:#29384b;
+  --text:#edf4ff;
+  --text-muted:#8fa1b6;
+  --accent:#69a4ff;
+  --accent2:#34d3eb;
+  --accent-soft:#1b2d44;
+  --shadow:0 10px 40px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  font-family:var(--sans);
+  background:
+    radial-gradient(circle at top right,rgba(79,140,255,.10),transparent 22%),
+    radial-gradient(circle at bottom left,rgba(0,184,217,.08),transparent 25%),
+    var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  transition:background var(--transition),color var(--transition);
+}
+
+.wrapper{max-width:920px;margin:0 auto;padding:28px 20px 70px;}
+
+/* ── Header ── */
+header{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:36px;}
+.header-brand{display:flex;align-items:center;gap:16px;}
+.brand-logo-wrap{display:flex;align-items:center;gap:16px;}
+.brand-svg{width:66px;height:66px;flex-shrink:0;filter:drop-shadow(0 8px 24px rgba(79,140,255,.32));}
+.brand-text h1{font-size:2rem;font-weight:800;letter-spacing:-.05em;line-height:1;}
+.brand-text h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.brand-text p{margin-top:6px;font-size:.82rem;color:var(--text-muted);font-family:var(--mono);letter-spacing:.14em;}
+.brand-pills{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.pill{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:999px;font-family:var(--mono);}
+.pill-blue{background:#eaf3ff;color:#2563eb;}
+.pill-teal{background:#e0fdf6;color:#0f766e;}
+.pill-amber{background:#fff7e0;color:#b45309;}
+[data-theme="dark"] .pill-blue{background:#1b2d44;color:#69a4ff;}
+[data-theme="dark"] .pill-teal{background:#0d2d26;color:#34d3eb;}
+[data-theme="dark"] .pill-amber{background:#2d1f07;color:#fbbf24;}
+.header-actions{display:flex;gap:10px;}
+.icon-btn{
+  width:44px;height:44px;border:1px solid var(--border);
+  background:rgba(255,255,255,.7);backdrop-filter:blur(10px);
+  border-radius:14px;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--transition);color:var(--text);
+}
+[data-theme="dark"] .icon-btn{background:rgba(19,29,42,.85);}
+.icon-btn:hover{border-color:var(--accent);background:var(--accent-soft);transform:translateY(-2px);}
+.lang-btn{width:auto;padding:0 12px;gap:6px;font-size:.82rem;font-weight:700;}
+
+/* API Status Indicator */
+.api-status{
+  display:flex;align-items:center;gap:6px;font-size:.72rem;font-family:var(--mono);
+  color:var(--text-muted);padding:4px 10px;border-radius:999px;
+  border:1px solid var(--border);background:rgba(255,255,255,.5);
+  backdrop-filter:blur(8px);
+}
+[data-theme="dark"] .api-status{background:rgba(19,29,42,.7);}
+.api-dot{width:7px;height:7px;border-radius:50%;background:var(--text-muted);flex-shrink:0;transition:background .3s;}
+.api-dot.online{background:var(--success);box-shadow:0 0 6px var(--success);}
+.api-dot.offline{background:var(--danger);}
+
+/* ── Card ── */
+.card{
+  background:rgba(255,255,255,.72);backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.55);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;margin-bottom:22px;
+}
+[data-theme="dark"] .card{background:rgba(19,29,42,.88);border:1px solid rgba(255,255,255,.04);}
+.card-header{
+  padding:18px 24px;border-bottom:1px solid var(--border);
+  background:linear-gradient(to bottom,rgba(255,255,255,.35),transparent);
+  display:flex;align-items:center;gap:10px;
+}
+.card-header h2{font-size:1rem;font-weight:700;}
+.card-header .badge{
+  margin-inline-start:auto;font-size:.72rem;font-family:var(--mono);
+  background:var(--accent-soft);color:var(--accent);
+  padding:4px 10px;border-radius:30px;font-weight:700;
+}
+.card-body{padding:24px;}
+
+/* ── Form ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+label{font-size:.8rem;font-weight:700;color:var(--text-muted);}
+input,select{
+  width:100%;padding:11px 14px;border-radius:14px;
+  border:1.5px solid transparent;background:var(--surface2);
+  color:var(--text);font-family:var(--sans);font-size:.94rem;
+  outline:none;transition:all var(--transition);
+}
+input:focus,select:focus{
+  border-color:var(--accent);background:var(--surface);
+  box-shadow:0 0 0 4px rgba(79,140,255,.12);
+}
+.field-hint{font-size:.72rem;color:var(--text-muted);font-family:var(--mono);}
+.select-wrap{position:relative;}
+.select-wrap select{appearance:none;-webkit-appearance:none;padding-inline-end:34px;}
+.select-wrap::after{
+  content:'▾';position:absolute;inset-inline-end:14px;top:50%;
+  transform:translateY(-50%);color:var(--text-muted);pointer-events:none;
+}
+
+/* ── Section separator ── */
+.form-section-title{
+  grid-column:1/-1;
+  font-size:.72rem;font-weight:800;color:var(--accent);
+  font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;
+  padding-bottom:4px;border-bottom:1px solid var(--border);
+  margin-top:8px;
+}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:12px;margin-top:24px;}
+.btn{
+  border:none;border-radius:14px;cursor:pointer;padding:11px 22px;
+  font-size:.92rem;font-weight:700;font-family:var(--sans);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:all var(--transition);
+}
+.btn-primary{
+  flex:1;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  box-shadow:0 10px 25px rgba(79,140,255,.24);
+}
+.btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 30px rgba(79,140,255,.32);}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.spinner{width:17px;height:17px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.btn-primary.loading .spinner{display:block;}
+.btn-primary.loading .btn-label{display:none;}
+
+/* ── Status ── */
+.status-msg{
+  margin-top:14px;padding:12px 15px;border-radius:14px;
+  font-size:.84rem;display:none;align-items:center;gap:8px;
+}
+.status-msg.error{background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;display:flex;}
+.status-msg.success{background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;display:flex;}
+.status-msg.warning{background:#fffbeb;border:1px solid #fde68a;color:#92400e;display:flex;}
+
+/* ── Result ── */
+#resultCard{display:none;animation:slideIn .35s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.result-inner{display:flex;align-items:center;gap:18px;}
+.result-icon{width:72px;height:72px;border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;}
+.result-icon.rain-yes{background:linear-gradient(135deg,#dbeafe,#bfdbfe);}
+.result-icon.rain-no{background:linear-gradient(135deg,#fef3c7,#fde68a);}
+.result-label{font-size:1.5rem;font-weight:800;}
+.result-label.rain-yes{color:var(--accent);}
+.result-label.rain-no{color:var(--warning);}
+.result-sub{margin-top:4px;font-size:.86rem;color:var(--text-muted);}
+
+/* Probability bar */
+.prob-bar-wrap{margin-top:14px;}
+.prob-bar-label{display:flex;justify-content:space-between;font-size:.75rem;font-family:var(--mono);color:var(--text-muted);margin-bottom:6px;}
+.prob-bar-track{height:10px;border-radius:999px;background:var(--border);overflow:hidden;}
+.prob-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .9s cubic-bezier(.4,0,.2,1);}
+
+.result-confidence{margin-inline-start:auto;text-align:center;}
+.confidence-ring{width:74px;height:74px;}
+.confidence-ring circle{fill:none;stroke-width:6;stroke-linecap:round;}
+.ring-bg{stroke:var(--border);}
+.ring-fill{stroke:var(--accent);transform-origin:center;transform:rotate(-90deg);transition:stroke-dashoffset .8s ease;}
+.confidence-val{margin-top:5px;font-size:.82rem;font-weight:700;font-family:var(--mono);}
+
+/* ── AI Card ── */
+#aiCard{display:none;animation:slideIn .35s ease;}
+.ai-badge{
+  margin-inline-start:auto;padding:4px 10px;border-radius:999px;
+  background:rgba(79,140,255,.12);border:1px solid rgba(79,140,255,.18);
+  color:var(--accent);font-size:.68rem;font-weight:700;font-family:var(--mono);
+}
+.ai-body{padding:22px;font-size:.92rem;line-height:1.9;}
+.ai-body p{margin-bottom:.8em;}
+.ai-body ul{padding-inline-start:1.3em;margin:.6em 0 .9em;}
+.ai-body li{margin-bottom:.4em;}
+
+/* ── Info ── */
+.info-list{display:flex;flex-direction:column;gap:12px;}
+.info-list li{list-style:none;display:flex;gap:10px;font-size:.9rem;line-height:1.7;color:var(--text-muted);}
+.info-list li::before{content:'✓';color:var(--success);font-weight:800;}
+
+/* ── Footer ── */
+footer{text-align:center;padding-top:18px;font-size:.76rem;color:var(--text-muted);font-family:var(--mono);letter-spacing:.08em;}
+
+/* ── Responsive ── */
+@media(max-width:560px){
+  .form-grid{grid-template-columns:1fr;}
+  .result-inner{flex-direction:column;text-align:center;}
+  .result-confidence{margin-inline-start:0;}
+  header{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+
+<body>
+<div class="wrapper">
+
+<!-- HEADER -->
+<header>
+  <div class="header-brand">
+    <div class="brand-logo-wrap">
+      <svg class="brand-svg" viewBox="0 0 66 66" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4f8cff"/>
+            <stop offset="100%" stop-color="#00b8d9"/>
+          </linearGradient>
+          <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.30)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+          </linearGradient>
+        </defs>
+        <rect width="66" height="66" rx="20" fill="url(#lg1)"/>
+        <rect width="66" height="66" rx="20" fill="url(#lg2)"/>
+        <ellipse cx="33" cy="38" rx="16" ry="9" fill="white" opacity="0.95"/>
+        <circle cx="26" cy="33" r="7" fill="white" opacity="0.95"/>
+        <circle cx="34" cy="30" r="9" fill="white" opacity="0.95"/>
+        <circle cx="42" cy="33" r="6" fill="white" opacity="0.95"/>
+        <polygon points="34,30 29,42 33,42 31,52 40,38 36,38 40,30" fill="#FFD600" opacity="0.95"/>
+        <ellipse cx="22" cy="49" rx="1.8" ry="3" fill="#a5d8ff" opacity="0.8"/>
+        <ellipse cx="28" cy="52" rx="1.8" ry="3" fill="#a5d8ff" opacity="0.65"/>
+        <ellipse cx="44" cy="49" rx="1.8" ry="3" fill="#a5d8ff" opacity="0.8"/>
+      </svg>
+      <div class="brand-text">
+        <h1>Sahaba<span>X</span> AI</h1>
+        <p id="brandSub">SMART WEATHER INTELLIGENCE</p>
+        <div class="brand-pills">
+          <span class="pill pill-blue" id="pill1">☁️ توقع</span>
+          <span class="pill pill-teal" id="pill2">🤖 AI</span>
+          <span class="pill pill-amber" id="pill3">⚡ Speed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <!-- API Status -->
+    <div class="api-status" id="apiStatusBadge">
+      <div class="api-dot" id="apiDot"></div>
+      <span id="apiStatusText">API...</span>
+    </div>
+    <button class="icon-btn" id="themeBtn" title="تبديل الثيم">🌙</button>
+    <button class="icon-btn lang-btn" id="langBtn">
+      <span id="langFlag">🇬🇧</span>
+      <span id="langLabel">English</span>
+    </button>
+  </div>
+</header>
+
+<!-- FORM CARD -->
+<div class="card">
+  <div class="card-header">
+    <span>📊</span>
+    <h2 id="formTitle">بيانات الطقس</h2>
+    <span class="badge" id="formBadge">10 حقول</span>
+  </div>
+  <div class="card-body">
+    <div class="form-grid">
+
+      <!-- SECTION: Humidity -->
+      <div class="form-section-title" id="sec-humidity">💧 الرطوبة</div>
+
+      <div class="field">
+        <label id="lbl-hum9am" for="Humidity9am">الرطوبة الصباح (9am)</label>
+        <input type="number" id="Humidity9am" placeholder="80" min="0" max="100" step="1"/>
+        <span class="field-hint" id="hint-hum9am">% (0 – 100)</span>
+      </div>
+
+      <div class="field">
+        <label id="lbl-hum3pm" for="Humidity3pm">الرطوبة العصر (3pm)</label>
+        <input type="number" id="Humidity3pm" placeholder="55" min="0" max="100" step="1"/>
+        <span class="field-hint" id="hint-hum3pm">% (0 – 100)</span>
+      </div>
+
+      <!-- SECTION: Pressure -->
+      <div class="form-section-title" id="sec-pressure">🔵 الضغط الجوي</div>
+
+      <div class="field">
+        <label id="lbl-press9am" for="Pressure9am">الضغط الصباح (9am)</label>
+        <input type="number" id="Pressure9am" placeholder="1012" min="800" max="1100" step="0.1"/>
+        <span class="field-hint" id="hint-press9am">hPa</span>
+      </div>
+
+      <!-- SECTION: Cloud & Sunshine -->
+      <div class="form-section-title" id="sec-cloud">☁️ السحاب والشمس</div>
+
+      <div class="field">
+        <label id="lbl-cloud9am" for="Cloud9am">تغطية السحاب صباحاً (9am)</label>
+        <input type="number" id="Cloud9am" placeholder="5" min="0" max="9" step="1"/>
+        <span class="field-hint" id="hint-cloud9am">Oktas (0 – 9)</span>
+      </div>
+
+      <div class="field">
+        <label id="lbl-cloud3pm" for="Cloud3pm">تغطية السحاب عصراً (3pm)</label>
+        <input type="number" id="Cloud3pm" placeholder="4" min="0" max="9" step="1"/>
+        <span class="field-hint" id="hint-cloud3pm">Oktas (0 – 9)</span>
+      </div>
+
+      <div class="field">
+        <label id="lbl-sunshine" for="Sunshine">ساعات الشمس</label>
+        <input type="number" id="Sunshine" placeholder="8" min="0" max="14.5" step="0.1"/>
+        <span class="field-hint" id="hint-sunshine">ساعة / يوم</span>
+      </div>
+
+      <!-- SECTION: Wind & Rain -->
+      <div class="form-section-title" id="sec-wind">💨 الرياح والمطر</div>
+
+      <div class="field">
+        <label id="lbl-windgust" for="WindGustSpeed">أقصى سرعة رياح</label>
+        <input type="number" id="WindGustSpeed" placeholder="40" min="0" max="150" step="1"/>
+        <span class="field-hint" id="hint-windgust">km/h</span>
+      </div>
+
+      <div class="field">
+        <label id="lbl-rainfall" for="Rainfall">كمية الأمطار اليوم</label>
+        <input type="number" id="Rainfall" placeholder="0" min="0" max="400" step="0.1"/>
+        <span class="field-hint" id="hint-rainfall">mm</span>
+      </div>
+
+      <!-- SECTION: Temperature -->
+      <div class="form-section-title" id="sec-temp">🌡️ درجة الحرارة</div>
+
+      <div class="field">
+        <label id="lbl-temp3pm" for="Temp3pm">درجة الحرارة العصر (3pm)</label>
+        <input type="number" id="Temp3pm" placeholder="22" min="-20" max="60" step="0.1"/>
+        <span class="field-hint" id="hint-temp3pm">°C</span>
+      </div>
+
+      <!-- SECTION: Rain Today -->
+      <div class="form-section-title" id="sec-raintoday">🌧️ هل مطرت اليوم؟</div>
+
+      <div class="field">
+        <label id="lbl-raintoday" for="RainToday">أمطار اليوم</label>
+        <div class="select-wrap">
+          <select id="RainToday">
+            <option value="" id="opt-rain-placeholder">— اختر —</option>
+            <option value="1" id="opt-rain-yes">✅ نعم</option>
+            <option value="0" id="opt-rain-no">❌ لا</option>
+          </select>
+        </div>
+        <span class="field-hint" id="hint-raintoday">هل سقط مطر اليوم؟</span>
+      </div>
+
+    </div><!-- /form-grid -->
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="predictBtn" onclick="predict()">
+        <span class="spinner"></span>
+        <span class="btn-label" id="predictBtnLabel">🔮 توقع الطقس</span>
+      </button>
+      <button class="btn btn-ghost" id="resetBtn" onclick="resetForm()">
+        <span id="resetBtnLabel">↺ إعادة</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- RESULT CARD -->
+<div class="card" id="resultCard">
+  <div class="card-header">
+    <span>🎯</span>
+    <h2 id="resultTitle">النتيجة</h2>
+    <span class="badge" id="resultSourceBadge">ML Model</span>
+  </div>
+  <div class="card-body">
+    <div class="result-inner">
+      <div class="result-icon" id="resultIcon"></div>
+      <div style="flex:1">
+        <div class="result-label" id="resultLabel"></div>
+        <div class="result-sub" id="resultSub"></div>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar-label">
+            <span id="probBarLabel">احتمالية المطر</span>
+            <span id="probBarVal">0%</span>
+          </div>
+          <div class="prob-bar-track">
+            <div class="prob-bar-fill" id="probBarFill"></div>
+          </div>
+        </div>
+      </div>
+      <div class="result-confidence">
+        <svg class="confidence-ring" viewBox="0 0 72 72">
+          <circle class="ring-bg" cx="36" cy="36" r="30"/>
+          <circle class="ring-fill" cx="36" cy="36" r="30" id="ringFill"
+            stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+        </svg>
+        <div class="confidence-val" id="confVal">0%</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI CARD -->
+<div class="card" id="aiCard">
+  <div class="card-header">
+    <span>🤖</span>
+    <h2 id="aiTitle">تحليل الذكاء الاصطناعي</h2>
+    <span class="ai-badge">SahabaX AI</span>
+  </div>
+  <div class="ai-body" id="aiBody"></div>
+</div>
+
+<!-- INFO CARD -->
+<div class="card">
+  <div class="card-header">
+    <span>✨</span>
+    <h2 id="infoTitle">لماذا SahabaX AI ؟</h2>
+  </div>
+  <div class="card-body">
+    <ul class="info-list" id="infoList">
+      <li id="info1">يعتمد النظام على نموذج Machine Learning حقيقي مدرّب على بيانات جوية واسعة لتقديم توقعات دقيقة.</li>
+      <li id="info2">واجهة احترافية حديثة تعمل بسلاسة على الهاتف والكمبيوتر.</li>
+      <li id="info3">يتم حساب احتمالية سقوط الأمطار بشكل لحظي مع عرض النتائج بطريقة واضحة وسهلة.</li>
+      <li id="info4">تصميم مريح للعين مع دعم كامل للوضع الليلي واللغة العربية والإنجليزية.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>SahabaX AI · Smart Weather Prediction Platform · v3.0.0 · FastAPI Backend</footer>
+
+</div><!-- /wrapper -->
+
+<script>
+/* ═══════════════════════════════
+   CONFIG — غيّر هنا URL الـ API
+═══════════════════════════════ */
+const API_BASE = 'http://localhost:8000';   // ← غيّر للـ IP/Domain بتاعك لو على سيرفر
+
+/* ═══════════════════════════════
+   TRANSLATIONS
+═══════════════════════════════ */
+const T = {
+  ar: {
+    brandSub:        'SMART WEATHER INTELLIGENCE',
+    formTitle:       'بيانات الطقس',
+    formBadge:       '10 حقول',
+    predictBtn:      '🔮 توقع الطقس',
+    resetBtn:        '↺ إعادة',
+    resultTitle:     'النتيجة',
+    aiTitle:         'تحليل الذكاء الاصطناعي',
+    infoTitle:       'لماذا SahabaX AI ؟',
+    info1:           'يعتمد النظام على نموذج Machine Learning حقيقي مدرّب على بيانات جوية واسعة لتقديم توقعات دقيقة.',
+    info2:           'واجهة احترافية حديثة تعمل بسلاسة على الهاتف والكمبيوتر.',
+    info3:           'يتم حساب احتمالية سقوط الأمطار بشكل لحظي مع عرض النتائج بطريقة واضحة وسهلة.',
+    info4:           'تصميم مريح للعين مع دعم كامل للوضع الليلي واللغة العربية والإنجليزية.',
+    pill1: '☁️ توقع', pill2: '🤖 ML', pill3: '⚡ Speed',
+    'lbl-hum9am':    '💧 الرطوبة الصباح (9am)',
+    'lbl-hum3pm':    '💧 الرطوبة العصر (3pm)',
+    'lbl-press9am':  '🔵 الضغط الصباح (9am)',
+    'lbl-cloud9am':  '☁️ سحاب الصباح (9am)',
+    'lbl-cloud3pm':  '☁️ سحاب العصر (3pm)',
+    'lbl-sunshine':  '☀️ ساعات الشمس',
+    'lbl-windgust':  '💨 أقصى سرعة رياح',
+    'lbl-rainfall':  '🌧️ كمية الأمطار اليوم',
+    'lbl-temp3pm':   '🌡️ الحرارة العصر (3pm)',
+    'lbl-raintoday': '🌂 أمطار اليوم',
+    'hint-hum9am':   '% (0 – 100)',
+    'hint-hum3pm':   '% (0 – 100)',
+    'hint-press9am': 'hPa',
+    'hint-cloud9am': 'Oktas (0 – 9)',
+    'hint-cloud3pm': 'Oktas (0 – 9)',
+    'hint-sunshine': 'ساعة / يوم',
+    'hint-windgust': 'km/h',
+    'hint-rainfall': 'mm',
+    'hint-temp3pm':  '°C',
+    'hint-raintoday':'هل سقط مطر اليوم؟',
+    'opt-rain-placeholder': '— اختر —',
+    'opt-rain-yes':  '✅ نعم',
+    'opt-rain-no':   '❌ لا',
+    'sec-humidity':  '💧 الرطوبة',
+    'sec-pressure':  '🔵 الضغط الجوي',
+    'sec-cloud':     '☁️ السحاب والشمس',
+    'sec-wind':      '💨 الرياح والمطر',
+    'sec-temp':      '🌡️ درجة الحرارة',
+    'sec-raintoday': '🌧️ هل مطرت اليوم؟',
+    rainYes:         '🌧️ ستمطر غداً',
+    rainNo:          '☀️ لن تمطر غداً',
+    rainYesSub:      'النموذج يتوقع هطول أمطار غداً',
+    rainNoSub:       'لا توجد مؤشرات على هطول أمطار غداً',
+    probBarLabel:    'احتمالية المطر',
+    errFill:         '⚠️ من فضلك أدخل جميع البيانات المطلوبة.',
+    errRange:        '⚠️ تأكد من أن القيم في النطاق الصحيح.',
+    errApi:          '❌ تعذّر الاتصال بالـ API. تأكد أن السيرفر شغال.',
+    apiOnline:       'API متصل',
+    apiOffline:      'API غير متصل',
+    apiChecking:     'جاري الاتصال...',
+    dir: 'rtl', lang: 'ar'
+  },
+  en: {
+    brandSub:        'SMART WEATHER INTELLIGENCE',
+    formTitle:       'Weather Data',
+    formBadge:       '10 Fields',
+    predictBtn:      '🔮 Predict Weather',
+    resetBtn:        '↺ Reset',
+    resultTitle:     'Result',
+    aiTitle:         'AI Analysis',
+    infoTitle:       'Why SahabaX AI?',
+    info1:           'Powered by a real Machine Learning model trained on extensive weather datasets for accurate predictions.',
+    info2:           'Modern professional interface that works seamlessly on mobile & desktop.',
+    info3:           'Real-time rain probability calculation with clear, easy-to-read results.',
+    info4:           'Eye-friendly design with full dark mode, Arabic & English support.',
+    pill1: '☁️ Forecast', pill2: '🤖 ML', pill3: '⚡ Speed',
+    'lbl-hum9am':    '💧 Humidity 9am',
+    'lbl-hum3pm':    '💧 Humidity 3pm',
+    'lbl-press9am':  '🔵 Pressure 9am',
+    'lbl-cloud9am':  '☁️ Cloud 9am',
+    'lbl-cloud3pm':  '☁️ Cloud 3pm',
+    'lbl-sunshine':  '☀️ Sunshine Hours',
+    'lbl-windgust':  '💨 Wind Gust Speed',
+    'lbl-rainfall':  '🌧️ Rainfall Today',
+    'lbl-temp3pm':   '🌡️ Temperature 3pm',
+    'lbl-raintoday': '🌂 Rain Today',
+    'hint-hum9am':   '% (0 – 100)',
+    'hint-hum3pm':   '% (0 – 100)',
+    'hint-press9am': 'hPa',
+    'hint-cloud9am': 'Oktas (0 – 9)',
+    'hint-cloud3pm': 'Oktas (0 – 9)',
+    'hint-sunshine': 'hours / day',
+    'hint-windgust': 'km/h',
+    'hint-rainfall': 'mm',
+    'hint-temp3pm':  '°C',
+    'hint-raintoday':'Did it rain today?',
+    'opt-rain-placeholder': '— Select —',
+    'opt-rain-yes':  '✅ Yes',
+    'opt-rain-no':   '❌ No',
+    'sec-humidity':  '💧 Humidity',
+    'sec-pressure':  '🔵 Atmospheric Pressure',
+    'sec-cloud':     '☁️ Cloud & Sunshine',
+    'sec-wind':      '💨 Wind & Rain',
+    'sec-temp':      '🌡️ Temperature',
+    'sec-raintoday': '🌧️ Did It Rain Today?',
+    rainYes:         '🌧️ It Will Rain Tomorrow',
+    rainNo:          '☀️ No Rain Tomorrow',
+    rainYesSub:      'The model predicts rainfall tomorrow',
+    rainNoSub:       'No indicators of rainfall detected for tomorrow',
+    probBarLabel:    'Rain Probability',
+    errFill:         '⚠️ Please fill in all required fields.',
+    errRange:        '⚠️ Make sure all values are in valid ranges.',
+    errApi:          '❌ Cannot connect to API. Make sure the server is running.',
+    apiOnline:       'API Connected',
+    apiOffline:      'API Offline',
+    apiChecking:     'Connecting...',
+    dir: 'ltr', lang: 'en'
+  }
+};
+
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+let currentLang = localStorage.getItem('lang') || 'ar';
+let dark = localStorage.getItem('theme') === 'dark';
+let apiOnline = false;
+
+/* ═══════════════════════════════
+   THEME
+═══════════════════════════════ */
+const themeBtn = document.getElementById('themeBtn');
+
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  themeBtn.textContent = dark ? '☀️' : '🌙';
+}
+themeBtn.addEventListener('click', () => {
+  dark = !dark;
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  applyTheme();
+});
+applyTheme();
+
+/* ═══════════════════════════════
+   LANGUAGE
+═══════════════════════════════ */
+function applyLang(lang){
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  const t = T[lang];
+  document.documentElement.setAttribute('dir', t.dir);
+  document.documentElement.setAttribute('lang', t.lang);
+  document.documentElement.setAttribute('data-lang', lang);
+
+  const ids = [
+    'brandSub','formTitle','formBadge','resultTitle','aiTitle','infoTitle',
+    'info1','info2','info3','info4',
+    'lbl-hum9am','lbl-hum3pm','lbl-press9am','lbl-cloud9am','lbl-cloud3pm',
+    'lbl-sunshine','lbl-windgust','lbl-rainfall','lbl-temp3pm','lbl-raintoday',
+    'hint-hum9am','hint-hum3pm','hint-press9am','hint-cloud9am','hint-cloud3pm',
+    'hint-sunshine','hint-windgust','hint-rainfall','hint-temp3pm','hint-raintoday',
+    'opt-rain-placeholder','opt-rain-yes','opt-rain-no',
+    'sec-humidity','sec-pressure','sec-cloud','sec-wind','sec-temp','sec-raintoday',
+    'pill1','pill2','pill3'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(el && t[id]) el.textContent = t[id];
+  });
+
+  document.getElementById('predictBtnLabel').textContent = t.predictBtn;
+  document.getElementById('resetBtnLabel').textContent   = t.resetBtn;
+
+  if(lang === 'ar'){
+    document.getElementById('langFlag').textContent  = '🇬🇧';
+    document.getElementById('langLabel').textContent = 'English';
+  } else {
+    document.getElementById('langFlag').textContent  = '🇸🇦';
+    document.getElementById('langLabel').textContent = 'عربي';
+  }
+
+  // update API status text
+  updateApiStatusUI();
+}
+
+document.getElementById('langBtn').addEventListener('click', () => {
+  applyLang(currentLang === 'ar' ? 'en' : 'ar');
+});
+
+/* ═══════════════════════════════
+   API HEALTH CHECK
+═══════════════════════════════ */
+function updateApiStatusUI(){
+  const dot  = document.getElementById('apiDot');
+  const text = document.getElementById('apiStatusText');
+  const t    = T[currentLang];
+  if(apiOnline === null){
+    dot.className = 'api-dot';
+    text.textContent = t.apiChecking;
+  } else if(apiOnline){
+    dot.className = 'api-dot online';
+    text.textContent = t.apiOnline;
+  } else {
+    dot.className = 'api-dot offline';
+    text.textContent = t.apiOffline;
+  }
+}
+
+async function checkApiHealth(){
+  apiOnline = null;
+  updateApiStatusUI();
+  try {
+    const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(4000) });
+    const data = await res.json();
+    apiOnline = res.ok && data.model_loaded === true;
+  } catch {
+    apiOnline = false;
+  }
+  updateApiStatusUI();
+}
+
+// Check on load & every 30s
+checkApiHealth();
+setInterval(checkApiHealth, 30000);
+
+/* ═══════════════════════════════
+   HELPERS
+═══════════════════════════════ */
+function showStatus(msg, type='error'){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = `status-msg ${type}`;
+}
+function hideStatus(){
+  document.getElementById('statusMsg').className = 'status-msg';
+}
+function setLoading(on){
+  const btn = document.getElementById('predictBtn');
+  btn.classList.toggle('loading', on);
+  btn.disabled = on;
+}
+
+/* ═══════════════════════════════
+   PREDICT — calls FastAPI
+═══════════════════════════════ */
+async function predict(){
+  hideStatus();
+
+  /* collect values */
+  const Humidity9am   = parseFloat(document.getElementById('Humidity9am').value);
+  const Humidity3pm   = parseFloat(document.getElementById('Humidity3pm').value);
+  const Pressure9am   = parseFloat(document.getElementById('Pressure9am').value);
+  const Cloud9am      = parseFloat(document.getElementById('Cloud9am').value);
+  const Cloud3pm      = parseFloat(document.getElementById('Cloud3pm').value);
+  const Sunshine      = parseFloat(document.getElementById('Sunshine').value);
+  const WindGustSpeed = parseFloat(document.getElementById('WindGustSpeed').value);
+  const Rainfall      = parseFloat(document.getElementById('Rainfall').value);
+  const Temp3pm       = parseFloat(document.getElementById('Temp3pm').value);
+  const RainToday     = document.getElementById('RainToday').value;
+
+  /* validate: all filled */
+  if(
+    [Humidity9am,Humidity3pm,Pressure9am,Cloud9am,Cloud3pm,
+     Sunshine,WindGustSpeed,Rainfall,Temp3pm].some(isNaN) || RainToday === ''
+  ){
+    showStatus(T[currentLang].errFill);
+    return;
+  }
+
+  /* validate ranges */
+  if(
+    Humidity9am < 0 || Humidity9am > 100 ||
+    Humidity3pm < 0 || Humidity3pm > 100 ||
+    Pressure9am < 800 || Pressure9am > 1100 ||
+    Cloud9am < 0 || Cloud9am > 9 ||
+    Cloud3pm < 0 || Cloud3pm > 9
+  ){
+    showStatus(T[currentLang].errRange);
+    return;
+  }
+
+  setLoading(true);
+
+  /* build payload matching FastAPI WeatherInput schema */
+  const payload = {
+    Humidity9am,
+    Humidity3pm,
+    Rainfall,
+    Sunshine,
+    Cloud3pm,
+    Cloud9am,
+    Pressure9am,
+    WindGustSpeed,
+    Temp3pm,
+    RainToday: parseInt(RainToday)
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if(!res.ok){
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    /* data = { prediction: "Yes"|"No", probability: 0.73, rain: true } */
+
+    const probability  = Math.round(data.probability * 100);
+    const willRain     = data.rain;
+
+    showResult(willRain, probability);
+    showAnalysis(payload, willRain, probability);
+    apiOnline = true;
+    updateApiStatusUI();
+
+  } catch(e) {
+    console.error('API error:', e);
+    showStatus(T[currentLang].errApi + (e.message ? ` (${e.message})` : ''));
+    apiOnline = false;
+    updateApiStatusUI();
+  } finally {
+    setLoading(false);
+  }
+}
+
+/* ═══════════════════════════════
+   SHOW RESULT
+═══════════════════════════════ */
+function showResult(willRain, probability){
+  const t = T[currentLang];
+
+  const icon  = document.getElementById('resultIcon');
+  const label = document.getElementById('resultLabel');
+  const sub   = document.getElementById('resultSub');
+  const ring  = document.getElementById('ringFill');
+  const conf  = document.getElementById('confVal');
+  const barFill = document.getElementById('probBarFill');
+  const barVal  = document.getElementById('probBarVal');
+  const barLabel= document.getElementById('probBarLabel');
+
+  barLabel.textContent = t.probBarLabel;
+
+  if(willRain){
+    icon.className    = 'result-icon rain-yes';
+    icon.textContent  = '🌧️';
+    label.className   = 'result-label rain-yes';
+    label.textContent = t.rainYes;
+    sub.textContent   = t.rainYesSub;
+    ring.style.stroke = 'var(--accent)';
+  } else {
+    icon.className    = 'result-icon rain-no';
+    icon.textContent  = '☀️';
+    label.className   = 'result-label rain-no';
+    label.textContent = t.rainNo;
+    sub.textContent   = t.rainNoSub;
+    ring.style.stroke = 'var(--warning)';
+  }
+
+  /* ring: circumference ≈ 188.5 */
+  const offset = 188.5 - (188.5 * probability / 100);
+  ring.style.strokeDashoffset = offset;
+  conf.textContent = `${probability}%`;
+
+  /* bar */
+  setTimeout(() => { barFill.style.width = `${probability}%`; }, 50);
+  barVal.textContent = `${probability}%`;
+
+  document.getElementById('resultCard').style.display = 'block';
+  document.getElementById('resultSourceBadge').textContent = 'ML Model';
+}
+
+/* ═══════════════════════════════
+   ANALYSIS — based on actual inputs
+═══════════════════════════════ */
+function showAnalysis(d, willRain, prob){
+  const isAr = currentLang === 'ar';
+  const aiCard = document.getElementById('aiCard');
+  const aiBody = document.getElementById('aiBody');
+  aiCard.style.display = 'block';
+
+  const h3   = d.Humidity3pm;
+  const h9   = d.Humidity9am;
+  const p    = d.Pressure9am;
+  const cc3  = d.Cloud3pm;
+  const sun  = d.Sunshine;
+  const wg   = d.WindGustSpeed;
+  const rain = d.Rainfall;
+  const rt   = d.RainToday;
+
+  /* pick 3 dominant factors */
+  const factors = [];
+
+  if(isAr){
+    if(h3 >= 75 || h9 >= 80)   factors.push(`رطوبة عالية (${h9}% صباحاً / ${h3}% مساءً) — تشير إلى هواء مشبع قريب من نقطة التكاثف`);
+    if(p < 1005)                 factors.push(`ضغط جوي منخفض (${p} hPa) — مؤشر كلاسيكي على اقتراب حالة جوية ماطرة`);
+    if(cc3 >= 5)                 factors.push(`سحاب كثيف (${cc3}/9 oktas) — يحجب الشمس ويتيح تراكم الرطوبة`);
+    if(sun < 4)                  factors.push(`ساعات شمس قليلة (${sun} ساعة) — يدل على غيوم كثيفة طوال اليوم`);
+    if(wg >= 50)                 factors.push(`رياح عاتية (${wg} km/h) — قد تصحب منخفضات جوية ماطرة`);
+    if(rain > 5 || rt === 1)     factors.push(`أمطار سقطت اليوم (${rain}mm) — تزيد من احتمالية الاستمرار غداً`);
+    if(p >= 1015)                factors.push(`ضغط جوي مرتفع (${p} hPa) — يستقر الجو ويقلل احتمالية المطر`);
+    if(h3 < 50 && h9 < 60)      factors.push(`رطوبة منخفضة (${h9}% / ${h3}%) — الهواء جاف ولا يدعم تكوّن أمطار`);
+    if(sun >= 8)                 factors.push(`شمس قوية (${sun} ساعة) — دليل على سماء صافية معظم اليوم`);
+  } else {
+    if(h3 >= 75 || h9 >= 80)   factors.push(`High humidity (${h9}% morning / ${h3}% afternoon) — air near saturation point`);
+    if(p < 1005)                 factors.push(`Low pressure (${p} hPa) — classic indicator of approaching wet conditions`);
+    if(cc3 >= 5)                 factors.push(`Heavy cloud cover (${cc3}/9 oktas) — blocks sunlight and traps moisture`);
+    if(sun < 4)                  factors.push(`Low sunshine hours (${sun}h) — suggests overcast conditions all day`);
+    if(wg >= 50)                 factors.push(`Strong gusts (${wg} km/h) — may accompany an active low-pressure system`);
+    if(rain > 5 || rt === 1)     factors.push(`Rain today (${rain}mm) — increases probability of continued rainfall tomorrow`);
+    if(p >= 1015)                factors.push(`High pressure (${p} hPa) — stable air mass suppressing rain development`);
+    if(h3 < 50 && h9 < 60)      factors.push(`Low humidity (${h9}% / ${h3}%) — dry air doesn't support rain formation`);
+    if(sun >= 8)                 factors.push(`Strong sunshine (${sun}h) — indicates mostly clear skies`);
+  }
+
+  const topFactors = factors.slice(0, 3);
+
+  const li = topFactors.map(f => `<li>${f}</li>`).join('');
+  const probClass = prob >= 70 ? 'danger' : prob >= 45 ? 'warning' : 'success';
+  const probEmoji = prob >= 70 ? '⚠️' : prob >= 45 ? '⚡' : '✅';
+
+  if(isAr){
+    aiBody.innerHTML = `
+      <p>${probEmoji} <strong>النموذج أعطى احتمالية ${prob}% للمطر غداً.</strong>
+      ${willRain
+        ? 'البيانات المُدخلة تشير بوضوح إلى ظروف مواتية لهطول الأمطار.'
+        : 'البيانات المُدخلة لا تشير إلى ظروف كافية لهطول الأمطار غداً.'
+      }</p>
+      <p>📌 <strong>أبرز العوامل المؤثرة في القرار:</strong></p>
+      <ul>${li || '<li>لا توجد عوامل طاغية — النموذج يقيّم التوليفة الكاملة للبيانات</li>'}</ul>
+      <p>💡 <strong>ملاحظة:</strong> النتيجة صادرة من نموذج Machine Learning حقيقي يحلل العلاقات بين جميع المتغيرات معًا، وليس قاعدة بسيطة. الاحتمالية ${prob}% تعكس ثقة النموذج بالتوقع.</p>`;
+  } else {
+    aiBody.innerHTML = `
+      <p>${probEmoji} <strong>The model assigned a ${prob}% rain probability for tomorrow.</strong>
+      ${willRain
+        ? 'The input data clearly points to conditions favorable for rainfall.'
+        : 'The input data does not indicate sufficient conditions for rain tomorrow.'
+      }</p>
+      <p>📌 <strong>Top contributing factors:</strong></p>
+      <ul>${li || '<li>No single dominant factor — the model evaluates the full combination of inputs</li>'}</ul>
+      <p>💡 <strong>Note:</strong> This result comes from a real Machine Learning model that analyzes relationships across all variables simultaneously, not a simple rule. The ${prob}% probability reflects the model's confidence in this prediction.</p>`;
+  }
+}
+
+/* ═══════════════════════════════
+   RESET
+═══════════════════════════════ */
+function resetForm(){
+  ['Humidity9am','Humidity3pm','Pressure9am','Cloud9am','Cloud3pm',
+   'Sunshine','WindGustSpeed','Rainfall','Temp3pm'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('RainToday').value = '';
+
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('aiCard').style.display     = 'none';
+  hideStatus();
+
+  document.getElementById('ringFill').style.strokeDashoffset = '188.5';
+  document.getElementById('confVal').textContent   = '0%';
+  document.getElementById('probBarFill').style.width = '0%';
+  document.getElementById('probBarVal').textContent  = '0%';
+}
+
+/* init lang */
+applyLang(currentLang);
+</script>
+</body>
+</html>

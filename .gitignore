@@ -1,0 +1,100 @@
+# =========================================================
+# SahabaX AI — .gitignore
+# =========================================================
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ---------- Virtual Environment ----------
+venv/
+.venv/
+env/
+ENV/
+
+# ---------- Environment Variables ----------
+.env
+.env.*
+!.env.example
+
+# ---------- Jupyter / Kaggle ----------
+.ipynb_checkpoints/
+
+# ---------- VS Code ----------
+.vscode/
+
+# ---------- PyCharm ----------
+.idea/
+
+# ---------- OS Files ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Logs ----------
+*.log
+logs/
+
+# ---------- Python Build ----------
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ---------- Cache ----------
+.cache/
+.pytest_cache/
+.mypy_cache/
+
+# ---------- Model Files ----------
+models/*.pkl
+models/*.joblib
+
+# ---------- Outputs ----------
+outputs/
+reports/
+figures/
+plots/
+
+# ---------- Streamlit ----------
+.streamlit/secrets.toml
+
+# ---------- Temporary Files ----------
+temp/
+tmp/
+*.tmp
+
+# ---------- API / Runtime ----------
+*.pid
+
+# ---------- Dataset ----------
+
+# data/
+
+# ---------- Node ----------
+node_modules/
+
+# ---------- Coverage ----------
+.coverage
+htmlcov/
+
+# ---------- FastAPI ----------
+*.db
+*.sqlite3
+
+# ---------- Uploaded Files ----------
+uploads/
+
+# ---------- Ignore system generated files ----------
+*.bak
+*.swp
+*.swo
+
+# =========================================================
+# Keep important folders in Git
+# =========================================================
+
+!models/.gitkeep
+!outputs/.gitkeep
