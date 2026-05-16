@@ -71,7 +71,7 @@ tmp/
 
 # ---------- Dataset ----------
 
-# data/
+ data/
 
 # ---------- Node ----------
 node_modules/
